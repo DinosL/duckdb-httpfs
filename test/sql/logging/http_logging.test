@@ -9,6 +9,9 @@ statement ok
 CALL enable_logging('HTTP');
 
 statement ok
+SET httpfs_client_implementation = httplib;
+
+statement ok
 FROM 'https://github.com/duckdb/duckdb/raw/main/data/csv/customer.csv'
 
 query IIII

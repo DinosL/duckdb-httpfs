@@ -9,6 +9,9 @@ require httpfs
 # FIXME: currently this will not fail the Linux HTTPFS ci job if it fails, because it might do so due to networking issues
 #        however having a CI job dedicated to remote tests that may spuriously fail would solve this
 
+statement ok
+SET httpfs_client_implementation = httplib;
+
 # Non existent repos get a 401
 statement error
 FROM parquet_scan('hf://datasets/samansmink/non-existent/*.parquet');
