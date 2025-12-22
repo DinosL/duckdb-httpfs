@@ -639,8 +639,10 @@ static string GetPrefix(string url) {
 ParsedS3Url S3FileSystem::S3UrlParse(string url, S3AuthParams &params) {
 	string http_proto, prefix, host, bucket, key, path, query_param, trimmed_s3_url;
 
+	Printer::PrintF("URL is %s", url.c_str());
 	prefix = GetPrefix(url);
 	auto prefix_end_pos = url.find("//") + 2;
+	Printer::PrintF("Prefix is %s", prefix.c_str());
 	auto slash_pos = url.find('/', prefix_end_pos);
 	if (slash_pos == string::npos) {
 		throw IOException("URL needs to contain a '/' after the host");
