@@ -639,10 +639,8 @@ static string GetPrefix(string url) {
 ParsedS3Url S3FileSystem::S3UrlParse(string url, S3AuthParams &params) {
 	string http_proto, prefix, host, bucket, key, path, query_param, trimmed_s3_url;
 
-	Printer::PrintF("URL is %s", url.c_str());
 	prefix = GetPrefix(url);
 	auto prefix_end_pos = url.find("//") + 2;
-	Printer::PrintF("Prefix is %s", prefix.c_str());
 	auto slash_pos = url.find('/', prefix_end_pos);
 	if (slash_pos == string::npos) {
 		throw IOException("URL needs to contain a '/' after the host");
@@ -1232,13 +1230,20 @@ string AWSListObjectV2::Request(string &path, HTTPParams &http_params, S3AuthPar
 		req_params += "&delimiter=%2F";
 	}
 
-	string listobjectv2_url = req_path + "?" + req_params;
+	// string listobjectv2_url = req_path + "?" + req_params;
 
 	auto header_map =
 	    create_s3_header(req_path, req_params, parsed_url.host, "s3", "GET", s3_auth_params, "", "", "", "");
 
 	// Get requests use fresh connection
 	string full_host = parsed_url.http_proto + parsed_url.host;
+
+	// Based on the error we are getting, the curl backend does not reconstruct the request and it omits the host
+	string listobjectv2_url;
+	if (http_params.http_util.GetName() == "HTTPFS-Curl")
+		listobjectv2_url = full_host + req_path + "?" + req_params;
+	else
+		listobjectv2_url = req_path + "?" + req_params;
 	std::stringstream response;
 	GetRequestInfo get_request(
 	    full_host, listobjectv2_url, header_map, http_params,

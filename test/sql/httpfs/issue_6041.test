@@ -7,7 +7,7 @@ require httpfs
 require parquet
 
 statement ok
-SET httpfs_client_implementation = httplib;
+SET httpfs_client_implementation = curl;
 
 statement ok
 SET s3_region='us-west-2';
