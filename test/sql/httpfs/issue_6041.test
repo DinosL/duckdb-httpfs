@@ -13,7 +13,4 @@ statement ok
 SET s3_region='us-west-2';
 
 statement ok
-SET s3_endpoint='http://localhost:9000';
-
-statement ok
 SELECT * FROM read_parquet('s3://overturemaps-us-west-2/release/2025-12-17.0/theme=places/type=place/*.parquet') LIMIT 10
