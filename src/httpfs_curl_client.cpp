@@ -177,6 +177,17 @@ public:
 		}
 	}
 
+	// TODO: Maybe its better if I use CURLU_URLENCODE but I cannot make it work.
+	// I think, we should be ok with just encoding spaces as the curl manual says that when CURLU_URLENCODE is used "The query part gets space-to-plus converted before the URL conversion is applied [by curl_url_set]."
+	static string EncodeSpaces(const string &url) {
+		string out;
+		out.reserve(url.size());
+		for (char c : url) {
+			out += (c == ' ') ? "+" : string(1, c);
+		}
+		return out;
+	}
+
 	~HTTPFSCurlClient() {
 		DestroyCurlGlobal();
 	}
@@ -197,7 +208,9 @@ public:
 		{
 			// If the same handle served a HEAD request, we must set NOBODY back to 0L to request content again
 			curl_easy_setopt(*curl, CURLOPT_NOBODY, 0L);
-			curl_easy_setopt(*curl, CURLOPT_URL, request_info->url.c_str());
+			// TODO: Wrap that in an if (curl_is_used) if we decide that we want to keep the httplib option. Make the change in all methods
+			auto encoded_url = EncodeSpaces(request_info->url);
+			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
 			curl_easy_setopt(*curl, CURLOPT_HTTPHEADER, curl_headers ? curl_headers.headers : nullptr);
 			res = curl->Execute();
 		}
@@ -242,7 +255,8 @@ public:
 
 		CURLcode res;
 		{
-			curl_easy_setopt(*curl, CURLOPT_URL, request_info->url.c_str());
+			auto encoded_url = EncodeSpaces(request_info->url);
+			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
 			// Perform PUT
 			curl_easy_setopt(*curl, CURLOPT_CUSTOMREQUEST, "PUT");
 			// Include PUT body
@@ -276,7 +290,8 @@ public:
 		CURLcode res;
 		{
 			// Set URL
-			curl_easy_setopt(*curl, CURLOPT_URL, request_info->url.c_str());
+			auto encoded_url = EncodeSpaces(request_info->url);
+			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
 
 			// Perform HEAD request instead of GET
 			curl_easy_setopt(*curl, CURLOPT_NOBODY, 1L);
@@ -309,7 +324,8 @@ public:
 		CURLcode res;
 		{
 			// Set URL
-			curl_easy_setopt(*curl, CURLOPT_URL, request_info->url.c_str());
+			auto encoded_url = EncodeSpaces(request_info->url);
+			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
 
 			// Set DELETE request method
 			curl_easy_setopt(*curl, CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -347,7 +363,8 @@ public:
 
 		CURLcode res;
 		{
-			curl_easy_setopt(*curl, CURLOPT_URL, request_info->url.c_str());
+			auto encoded_url = EncodeSpaces(request_info->url);
+			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
 			curl_easy_setopt(*curl, CURLOPT_POST, 1L);
 
 			// Set POST body
