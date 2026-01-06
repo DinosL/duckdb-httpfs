@@ -183,7 +183,7 @@ public:
 		string out;
 		out.reserve(url.size());
 		for (char c : url) {
-			out += (c == ' ') ? "+" : string(1, c);
+			out += (c == ' ') ? "%20" : string(1, c);
 		}
 		return out;
 	}
