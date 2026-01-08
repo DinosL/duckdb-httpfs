@@ -34,6 +34,7 @@ struct S3AuthParams {
 	string oauth2_bearer_token; // OAuth2 bearer token for GCS
 
 	static S3AuthParams ReadFrom(optional_ptr<FileOpener> opener, FileOpenerInfo &info);
+	static S3AuthParams ReadFrom(KeyValueSecretReader& secret_reader, const std::string& file_path);
 };
 
 struct AWSEnvironmentCredentialsProvider {
@@ -212,6 +213,8 @@ public:
 	static string UrlEncode(const string &input, bool encode_slash = false);
 	static string UrlDecode(string input);
 
+	static string TryGetPrefix(const string &url);
+
 	// Uploads the contents of write_buffer to S3.
 	// Note: caller is responsible to not call this method twice on the same buffer
 	static void UploadBuffer(S3FileHandle &file_handle, shared_ptr<S3WriteBuffer> write_buffer);
@@ -238,6 +241,7 @@ public:
 
 protected:
 	static void NotifyUploadsInProgress(S3FileHandle &file_handle);
+	static string GetPrefix(const string &url);
 	duckdb::unique_ptr<HTTPFileHandle> CreateHandle(const OpenFileInfo &file, FileOpenFlags flags,
 	                                                optional_ptr<FileOpener> opener) override;
 
@@ -255,4 +259,8 @@ struct AWSListObjectV2 {
 	static vector<string> ParseCommonPrefix(string &aws_response);
 	static string ParseContinuationToken(string &aws_response);
 };
+
+HTTPHeaders CreateS3Header(string url, string query, string host, string service, string method,
+									const S3AuthParams &auth_params, string date_now = "", string datetime_now = "",
+									string payload_hash = "", string content_type = "");
 } // namespace duckdb
