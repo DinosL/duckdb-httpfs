@@ -1240,13 +1240,19 @@ string AWSListObjectV2::Request(string &path, HTTPParams &http_params, S3AuthPar
 		req_params += "&delimiter=%2F";
 	}
 
-	string listobjectv2_url = req_path + "?" + req_params;
-
 	auto header_map =
 	    CreateS3Header(req_path, req_params, parsed_url.host, "s3", "GET", s3_auth_params, "", "", "", "");
 
 	// Get requests use fresh connection
 	string full_host = parsed_url.http_proto + parsed_url.host;
+
+	// Based on the error we are getting, the curl backend does not reconstruct the request and it omits the host while httplib does it silently
+	string listobjectv2_url;
+	if (http_params.http_util.GetName() == "HTTPFS-Curl")
+		listobjectv2_url = full_host + req_path + "?" + req_params;
+	else
+		listobjectv2_url = req_path + "?" + req_params;
+
 	std::stringstream response;
 	GetRequestInfo get_request(
 	    full_host, listobjectv2_url, header_map, http_params,
