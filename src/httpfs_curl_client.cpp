@@ -197,7 +197,7 @@ public:
 			state->get_count++;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers);
+		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		request_info->url = info.url;
 		if (!info.params.extra_headers.empty()) {
 			auto curl_params = TransformParamsCurl(info.params);
@@ -243,7 +243,7 @@ public:
 			state->total_bytes_sent += info.buffer_in_len;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers);
+		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		// Add content type header from info
 		curl_headers.Add("Content-Type: " + info.content_type);
 		// transform parameters
@@ -279,7 +279,7 @@ public:
 			state->head_count++;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers);
+		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		request_info->url = info.url;
 		// transform parameters
 		if (!info.params.extra_headers.empty()) {
@@ -313,7 +313,7 @@ public:
 			state->delete_count++;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers);
+		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		// transform parameters
 		request_info->url = info.url;
 		if (!info.params.extra_headers.empty()) {
@@ -351,7 +351,7 @@ public:
 			state->total_bytes_sent += info.buffer_in_len;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers);
+		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		const string content_type = "Content-Type: application/octet-stream";
 		curl_headers.Add(content_type.c_str());
 		// transform parameters
@@ -385,15 +385,19 @@ public:
 	}
 
 private:
-	CURLRequestHeaders TransformHeadersCurl(const HTTPHeaders &header_map) {
+	CURLRequestHeaders TransformHeadersCurl(const HTTPHeaders &header_map, const HTTPParams &params) {
+		auto &httpfs_params = params.Cast<HTTPFSParams>();
+
 		std::vector<std::string> headers;
 		for (auto &entry : header_map) {
 			const std::string new_header = entry.first + ": " + entry.second;
 			headers.push_back(new_header);
 		}
 		CURLRequestHeaders curl_headers;
-		for (auto &header : headers) {
-			curl_headers.Add(header);
+		if (!httpfs_params.pre_merged_headers) {
+			for (auto &entry : params.extra_headers) {
+				curl_headers.Add(entry.first + ": " + entry.second);
+			}
 		}
 		return curl_headers;
 	}
