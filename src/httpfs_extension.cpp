@@ -77,9 +77,6 @@ static void LoadInternal(ExtensionLoader &loader) {
 	config.AddExtensionOption("hf_max_per_page", "Debug option to limit number of items returned in list requests",
 	                          LogicalType::UBIGINT, Value::UBIGINT(0));
 
-	config.AddExtensionOption("merge_http_secret_into_s3_request", "Merges http secret params into S3 requests",
-	                          LogicalType::BOOLEAN, Value(true));
-
 	auto callback_httpfs_client_implementation = [](ClientContext &context, SetScope scope, Value &parameter) {
 		auto &config = DBConfig::GetConfig(context);
 		string value = StringValue::Get(parameter);
@@ -91,13 +88,13 @@ static void LoadInternal(ExtensionLoader &loader) {
 			                            "`default` are currently supported for duckdb-wasm");
 		}
 #ifndef EMSCRIPTEN
-		if (value == "curl") {
+		if (value == "curl" || value == "default") {
 			if (!config.http_util || config.http_util->GetName() != "HTTPFSUtil-Curl") {
 				config.http_util = make_shared_ptr<HTTPFSCurlUtil>();
 			}
 			return;
 		}
-		if (value == "httplib" || value == "default") {
+		if (value == "httplib") {
 			if (!config.http_util || config.http_util->GetName() != "HTTPFSUtil") {
 				config.http_util = make_shared_ptr<HTTPFSUtil>();
 			}
@@ -112,8 +109,9 @@ static void LoadInternal(ExtensionLoader &loader) {
 
 	if (config.http_util && config.http_util->GetName() == "WasmHTTPUtils") {
 		// Already handled, do not override
-	} else {
-		config.http_util = make_shared_ptr<HTTPFSUtil>();
+	}
+	else {
+		config.http_util = make_shared_ptr<HTTPFSCurlUtil>();
 	}
 
 	auto provider = make_uniq<AWSEnvironmentCredentialsProvider>(config);
