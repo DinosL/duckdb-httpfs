@@ -279,7 +279,7 @@ public:
 			state->head_count++;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
+		auto curl_headers = TransformHeadersCurl(info.headers);
 		request_info->url = info.url;
 		// transform parameters
 		if (!info.params.extra_headers.empty()) {
