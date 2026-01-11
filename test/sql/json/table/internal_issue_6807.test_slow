@@ -6,6 +6,11 @@ require json
 
 require httpfs
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 statement ok
 CALL enable_logging('HTTP');
 

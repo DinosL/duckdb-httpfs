@@ -6,6 +6,11 @@ require httpfs
 
 require parquet
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 # non existent host
 statement error
 SELECT * FROM PARQUET_SCAN('https://this-host-does-not-exist-for-sure/test.parquet');

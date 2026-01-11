@@ -8,6 +8,11 @@ require httpfs
 
 require json
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 # Test Force download with server that doesn't want to give us the head
 statement ok
 FROM read_json('https://api.spring.io/projects/spring-boot/generations')

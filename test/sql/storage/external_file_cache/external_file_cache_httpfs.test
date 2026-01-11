@@ -6,6 +6,11 @@ require parquet
 
 require httpfs
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 # first query caches the data
 statement ok
 from 'https://blobs.duckdb.org/data/shakespeare.parquet';

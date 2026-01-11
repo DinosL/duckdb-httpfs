@@ -8,6 +8,11 @@ require httpfs
 
 require tpch
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 statement ok
 SET force_download=true;
 

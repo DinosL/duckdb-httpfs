@@ -9,6 +9,11 @@ require httpfs
 statement ok
 PRAGMA enable_verification
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 query IIIII
 SELECT
     SUM(CASE WHEN is_successful THEN 1 ELSE 0 END),

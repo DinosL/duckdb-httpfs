@@ -18,6 +18,11 @@ require-env DUCKDB_S3_USE_SSL
 
 require-env S3_ATTACH_DB_PRESIGNED_URL
 
+#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+
+statement ok
+SET httpfs_client_implementation = httplib
+
 # ATTACH a DuckDB database over HTTPFS
 statement ok
 ATTACH '${S3_ATTACH_DB_PRESIGNED_URL}' AS db (READONLY 1);
