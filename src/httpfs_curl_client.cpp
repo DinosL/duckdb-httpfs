@@ -230,7 +230,7 @@ public:
 			state->total_bytes_sent += info.buffer_in_len;
 		}
 
-		auto curl_headers = TransformHeadersCurl(info.headers);
+		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		// Add content type header from info
 		curl_headers.Add("Content-Type: " + info.content_type);
 		// transform parameters
@@ -390,6 +390,9 @@ private:
 			headers.push_back(new_header);
 		}
 		CURLRequestHeaders curl_headers;
+		for (auto &header : headers) {
+			curl_headers.Add(header);
+		}
 		if (!httpfs_params.pre_merged_headers) {
 			for (auto &entry : params.extra_headers) {
 				curl_headers.Add(entry.first + ": " + entry.second);
