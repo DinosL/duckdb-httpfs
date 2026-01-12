@@ -406,28 +406,6 @@ private:
 		request_info->response_code = 0;
 	}
 
-	// FIXME: add more request codes
-	static string ReasonFromStatus(int code) {
-		switch (code) {
-		case 200:
-			return "OK";
-		case 206:
-			return "Partial Content";
-		case 400:
-			return "Bad Request";
-		case 401:
-			return "Unauthorized";
-		case 403:
-			return "Forbidden";
-		case 404:
-			return "Not Found";
-		case 503:
-			return "ServiceUnavailable_503";
-		default:
-			return "";
-		}
-	}
-
 	unique_ptr<HTTPResponse> TransformResponseCurl(CURLcode res) {
 		auto status_code = HTTPStatusCode(request_info->response_code);
 		auto response = make_uniq<HTTPResponse>(status_code);
@@ -443,7 +421,7 @@ private:
 		}
 		response->body = request_info->body;
 		response->url = request_info->url;
-		response->reason = ReasonFromStatus(request_info->response_code);
+		response->reason = HTTPUtil::GetStatusMessage(HTTPUtil::ToStatusCode(request_info->response_code));
 		if (!request_info->header_collection.empty()) {
 			for (auto &header : request_info->header_collection.back()) {
 				response->headers.Insert(header.first, header.second);
