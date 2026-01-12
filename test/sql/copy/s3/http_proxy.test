@@ -26,10 +26,10 @@ set ignore_error_messages
 statement ok
 PRAGMA enable_verification
 
-#FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
-
-statement ok
-SET httpfs_client_implementation = httplib
+# #FIXME: HTTP Error: Server sent back more data than expected, `SET force_download=true` might help in this case
+#
+# statement ok
+# SET httpfs_client_implementation = httplib
 
 statement ok
 COPY (SELECT 'value-1' as value) TO 's3://test-bucket/proxy-test/test.parquet';
