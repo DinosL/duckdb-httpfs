@@ -11,11 +11,6 @@ require-env PYTHON_HTTP_SERVER_URL
 
 require-env PYTHON_HTTP_SERVER_DIR
 
-# FIXME: make it work with curl
-
-statement ok
-SET httpfs_client_implementation = httplib
-
 statement ok
 CALL enable_logging();
 
@@ -48,4 +43,3 @@ statement error
 pragma tpch(6);
 ----
 HTTP Error: Content-Length from server mismatches requested range, server may not support range requests. You can try to resolve this by enabling `SET force_download=true`
-
