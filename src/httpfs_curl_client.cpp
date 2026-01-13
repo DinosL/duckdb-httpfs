@@ -10,7 +10,7 @@
 #ifndef EMSCRIPTEN
 #include "httpfs_curl_client.hpp"
 #endif
-
+#include <iostream>
 namespace duckdb {
 
 // we statically compile in libcurl, which means the cert file location of the build machine is the
@@ -54,11 +54,18 @@ static size_t RequestHeaderCallback(void *contents, size_t size, size_t nmemb, v
 	HeaderCollector *header_collection = static_cast<HeaderCollector *>(userp);
 
 	// Trim trailing \r\n
-	if (!header.empty() && header.back() == '\n') {
+	// if (!header.empty() && header.back() == '\n') {
+	// 	header.pop_back();
+	// 	if (!header.empty() && header.back() == '\r') {
+	// 		header.pop_back();
+	// 	}
+	// }
+	while (!header.empty() && (header.back() == '\n' || header.back() == '\r')) {
 		header.pop_back();
-		if (!header.empty() && header.back() == '\r') {
-			header.pop_back();
-		}
+	}
+
+	if (header.empty()) {
+		return totalSize;
 	}
 
 	// If header starts with HTTP/... curl has followed a redirect and we have a new Header,
@@ -66,6 +73,12 @@ static size_t RequestHeaderCallback(void *contents, size_t size, size_t nmemb, v
 	if (header.rfind("HTTP/", 0) == 0) {
 		header_collection->header_collection.push_back(HTTPHeaders());
 		header_collection->header_collection.back().Insert("__RESPONSE_STATUS__", header);
+		return totalSize;
+	}
+
+	// Ensure we have at least one HTTPHeaders object (should be initialized in ResetRequestInfo)
+	if (header_collection->header_collection.empty()) {
+		header_collection->header_collection.push_back(HTTPHeaders());
 	}
 
 	size_t colonPos = header.find(':');
@@ -74,7 +87,12 @@ static size_t RequestHeaderCallback(void *contents, size_t size, size_t nmemb, v
 		// Split the string into two parts
 		std::string part1 = header.substr(0, colonPos);
 		std::string part2 = header.substr(colonPos + 1);
-		if (part2.at(0) == ' ') {
+		// if (part2.at(0) == ' ') {
+		// 	part2.erase(0, 1);
+		// }
+
+		// Trim leading space from value
+		if (!part2.empty() && part2[0] == ' ') {
 			part2.erase(0, 1);
 		}
 
@@ -107,7 +125,7 @@ struct RequestInfo {
 	string url = "";
 	string body = "";
 	uint16_t response_code = 0;
-	std::vector<HTTPHeaders> header_collection;
+	HeaderCollector headers;
 };
 
 static idx_t httpfs_client_count = 0;
@@ -161,7 +179,7 @@ public:
 
 		// define the header callback
 		curl_easy_setopt(*curl, CURLOPT_HEADERFUNCTION, RequestHeaderCallback);
-		curl_easy_setopt(*curl, CURLOPT_HEADERDATA, &request_info->header_collection);
+		curl_easy_setopt(*curl, CURLOPT_HEADERDATA, &request_info->headers);
 		// define the write data callback (for get requests)
 		curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
 		curl_easy_setopt(*curl, CURLOPT_WRITEDATA, &request_info->body);
@@ -182,16 +200,18 @@ public:
 	}
 
 	unique_ptr<HTTPResponse> Get(GetRequestInfo &info) override {
+		ResetRequestInfo();
 		if (state) {
 			state->get_count++;
 		}
 
 		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		request_info->url = info.url;
-		if (!info.params.extra_headers.empty()) {
-			auto curl_params = TransformParamsCurl(info.params);
-			request_info->url += "?" + curl_params;
-		}
+		// FIXME: I think this should happen only for query params, not headers, which we don't store separately
+		 // if (!info.params.extra_headers.empty()) {
+			// auto curl_params = TransformParamsCurl(info.params);
+			// request_info->url += "?" + curl_params;
+		 // }
 
 		CURLcode res;
 		{
@@ -204,10 +224,19 @@ public:
 
 		curl_easy_getinfo(*curl, CURLINFO_RESPONSE_CODE, &request_info->response_code);
 
+		// std::cerr << "HTTP status: " << request_info->response_code << "\n";
+		// std::cerr << "Response headers:\n";
+		// if (!request_info->headers.header_collection.empty()) {
+		// 	for (auto &h : request_info->headers.header_collection.back()) {
+		// 		std::cerr << h.first << ": " << h.second << "\n";
+		// 	}
+		// }
+		// std::cerr << "Response body:\n" << request_info->body << "\n\n\n";
+
 		idx_t bytes_received = 0;
-		if (!request_info->header_collection.empty() &&
-		    request_info->header_collection.back().HasHeader("content-length")) {
-			bytes_received = std::stoi(request_info->header_collection.back().GetHeaderValue("content-length"));
+		if (!request_info->headers.header_collection.empty() &&
+		    request_info->headers.header_collection.back().HasHeader("content-length")) {
+			bytes_received = std::stoi(request_info->headers.header_collection.back().GetHeaderValue("content-length"));
 			D_ASSERT(bytes_received == request_info->body.size());
 		} else {
 			bytes_received = request_info->body.size();
@@ -215,6 +244,14 @@ public:
 		if (state) {
 			state->total_bytes_received += bytes_received;
 		}
+
+		if (info.response_handler) {
+			auto temp_response = TransformResponseCurl(res);
+			if (!info.response_handler(*temp_response)) {
+				return temp_response;
+			}
+		}
+
 
 		const char *data = request_info->body.c_str();
 		if (info.content_handler) {
@@ -225,6 +262,7 @@ public:
 	}
 
 	unique_ptr<HTTPResponse> Put(PutRequestInfo &info) override {
+		ResetRequestInfo();
 		if (state) {
 			state->put_count++;
 			state->total_bytes_sent += info.buffer_in_len;
@@ -235,10 +273,10 @@ public:
 		curl_headers.Add("Content-Type: " + info.content_type);
 		// transform parameters
 		request_info->url = info.url;
-		if (!info.params.extra_headers.empty()) {
-			auto curl_params = TransformParamsCurl(info.params);
-			request_info->url += "?" + curl_params;
-		}
+		// if (!info.params.extra_headers.empty()) {
+		// 	auto curl_params = TransformParamsCurl(info.params);
+		// 	request_info->url += "?" + curl_params;
+		// }
 
 		CURLcode res;
 		{
@@ -261,6 +299,7 @@ public:
 	}
 
 	unique_ptr<HTTPResponse> Head(HeadRequestInfo &info) override {
+		ResetRequestInfo();
 		if (state) {
 			state->head_count++;
 		}
@@ -268,10 +307,10 @@ public:
 		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		request_info->url = info.url;
 		// transform parameters
-		if (!info.params.extra_headers.empty()) {
-			auto curl_params = TransformParamsCurl(info.params);
-			request_info->url += "?" + curl_params;
-		}
+		// if (!info.params.extra_headers.empty()) {
+		// 	auto curl_params = TransformParamsCurl(info.params);
+		// 	request_info->url += "?" + curl_params;
+		// }
 
 		CURLcode res;
 		{
@@ -294,6 +333,7 @@ public:
 	}
 
 	unique_ptr<HTTPResponse> Delete(DeleteRequestInfo &info) override {
+		ResetRequestInfo();
 		if (state) {
 			state->delete_count++;
 		}
@@ -301,10 +341,10 @@ public:
 		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		// transform parameters
 		request_info->url = info.url;
-		if (!info.params.extra_headers.empty()) {
-			auto curl_params = TransformParamsCurl(info.params);
-			request_info->url += "?" + curl_params;
-		}
+		// if (!info.params.extra_headers.empty()) {
+		// 	auto curl_params = TransformParamsCurl(info.params);
+		// 	request_info->url += "?" + curl_params;
+		// }
 
 		CURLcode res;
 		{
@@ -330,6 +370,7 @@ public:
 	}
 
 	unique_ptr<HTTPResponse> Post(PostRequestInfo &info) override {
+		ResetRequestInfo();
 		if (state) {
 			state->post_count++;
 			state->total_bytes_sent += info.buffer_in_len;
@@ -340,10 +381,10 @@ public:
 		curl_headers.Add(content_type.c_str());
 		// transform parameters
 		request_info->url = info.url;
-		if (!info.params.extra_headers.empty()) {
-			auto curl_params = TransformParamsCurl(info.params);
-			request_info->url += "?" + curl_params;
-		}
+		// if (!info.params.extra_headers.empty()) {
+		// 	auto curl_params = TransformParamsCurl(info.params);
+		// 	request_info->url += "?" + curl_params;
+		// }
 
 		CURLcode res;
 		{
@@ -406,33 +447,12 @@ private:
 
 	void ResetRequestInfo() {
 		// clear headers after transform
-		request_info->header_collection.clear();
+		request_info->headers.header_collection.clear();
+		request_info->headers.header_collection.push_back(HTTPHeaders());
 		// reset request info.
 		request_info->body = "";
 		request_info->url = "";
 		request_info->response_code = 0;
-	}
-
-	// FIXME: add more request codes
-	static string ReasonFromStatus(int code) {
-		switch (code) {
-		case 200:
-			return "OK";
-		case 206:
-			return "Partial Content";
-		case 400:
-			return "Bad Request";
-		case 401:
-			return "Unauthorized";
-		case 403:
-			return "Forbidden";
-		case 404:
-			return "Not Found";
-		case 503:
-			return "ServiceUnavailable_503";
-		default:
-			return "";
-		}
 	}
 
 	unique_ptr<HTTPResponse> TransformResponseCurl(CURLcode res) {
@@ -440,9 +460,9 @@ private:
 		auto response = make_uniq<HTTPResponse>(status_code);
 		if (res != CURLcode::CURLE_OK) {
 			// TODO: request error can come from HTTPS Status code toString() value.
-			if (!request_info->header_collection.empty() &&
-			    request_info->header_collection.back().HasHeader("__RESPONSE_STATUS__")) {
-				response->request_error = request_info->header_collection.back().GetHeaderValue("__RESPONSE_STATUS__");
+			if (!request_info->headers.header_collection.empty() &&
+			    request_info->headers.header_collection.back().HasHeader("__RESPONSE_STATUS__")) {
+				response->request_error = request_info->headers.header_collection.back().GetHeaderValue("__RESPONSE_STATUS__");
 			} else {
 				response->request_error = curl_easy_strerror(res);
 			}
@@ -450,13 +470,25 @@ private:
 		}
 		response->body = request_info->body;
 		response->url = request_info->url;
-		response->reason = ReasonFromStatus(request_info->response_code);
-		if (!request_info->header_collection.empty()) {
-			for (auto &header : request_info->header_collection.back()) {
+		response->reason = HTTPUtil::GetStatusMessage(HTTPUtil::ToStatusCode(request_info->response_code));
+
+		if (!request_info->headers.header_collection.empty()) {
+			for (auto &header : request_info->headers.header_collection.back()) {
 				response->headers.Insert(header.first, header.second);
 			}
 		}
-		ResetRequestInfo();
+
+		// if (!request_info->headers.header_collection.empty()) {
+		// 	for (auto &header : request_info->headers.header_collection.back()) {
+		// 		response->headers.Insert(header.first, header.second);
+		// 		// Printer::PrintF("Inserting %s %s", header.first, header.second);
+		// 	}
+		// }
+		// ResetRequestInfo();
+		// for (auto &header : request_info->headers.header_collection.back()) {
+		// 	response->headers.Insert(header.first, header.second);
+		// 	Printer::PrintF("Inside %s %s", header.first, header.second);
+		// }
 		return response;
 	}
 
