@@ -379,22 +379,6 @@ private:
 		return curl_headers;
 	}
 
-	string TransformParamsCurl(const HTTPParams &params) {
-		string result = "";
-		unordered_map<string, string> escaped_params;
-		bool first_param = true;
-		for (auto &entry : params.extra_headers) {
-			const string key = entry.first;
-			const string value = curl_easy_escape(*curl, entry.second.c_str(), 0);
-			if (!first_param) {
-				result += "&";
-			}
-			result += key + "=" + value;
-			first_param = false;
-		}
-		return result;
-	}
-
 	void ResetRequestInfo() {
 		// clear headers after transform
 		request_info->header_collection.clear();
