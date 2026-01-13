@@ -189,10 +189,6 @@ public:
 
 		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		request_info->url = info.url;
-		// if (!info.params.extra_headers.empty()) {
-		// 	auto curl_params = TransformParamsCurl(info.params);
-		// 	request_info->url += "?" + curl_params;
-		// }
 
 		CURLcode res;
 		{
@@ -244,10 +240,6 @@ public:
 		curl_headers.Add("Content-Type: " + info.content_type);
 		// transform parameters
 		request_info->url = info.url;
-		// if (!info.params.extra_headers.empty()) {
-		// 	auto curl_params = TransformParamsCurl(info.params);
-		// 	request_info->url += "?" + curl_params;
-		// }
 
 		CURLcode res;
 		{
@@ -277,11 +269,6 @@ public:
 
 		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		request_info->url = info.url;
-		// transform parameters
-		// if (!info.params.extra_headers.empty()) {
-		// 	auto curl_params = TransformParamsCurl(info.params);
-		// 	request_info->url += "?" + curl_params;
-		// }
 
 		CURLcode res;
 		{
@@ -312,10 +299,6 @@ public:
 		auto curl_headers = TransformHeadersCurl(info.headers, info.params);
 		// transform parameters
 		request_info->url = info.url;
-		// if (!info.params.extra_headers.empty()) {
-		// 	auto curl_params = TransformParamsCurl(info.params);
-		// 	request_info->url += "?" + curl_params;
-		// }
 
 		CURLcode res;
 		{
@@ -352,10 +335,6 @@ public:
 		curl_headers.Add(content_type.c_str());
 		// transform parameters
 		request_info->url = info.url;
-		// if (!info.params.extra_headers.empty()) {
-		// 	auto curl_params = TransformParamsCurl(info.params);
-		// 	request_info->url += "?" + curl_params;
-		// }
 
 		CURLcode res;
 		{
@@ -446,7 +425,6 @@ private:
 				response->headers.Insert(header.first, header.second);
 			}
 		}
-		// ResetRequestInfo();
 		return response;
 	}
 
