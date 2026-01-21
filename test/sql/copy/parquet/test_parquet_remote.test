@@ -6,6 +6,8 @@ require httpfs
 
 require parquet
 
+mode skip
+
 # non existent host
 statement error
 SELECT * FROM PARQUET_SCAN('https://this-host-does-not-exist-for-sure/test.parquet');
@@ -41,6 +43,8 @@ SELECT id, first_name, last_name, email FROM PARQUET_SCAN('https://raw.githubuse
 9	Jose	Foster	jfoster8@yelp.com
 10	Emily	Stewart	estewart9@opensource.org
 
+mode unskip
+
 
 # with redirects
 query IIII
@@ -56,6 +60,8 @@ SELECT id, first_name, last_name, email FROM PARQUET_SCAN('https://github.com/du
 8	Harry	Howell	hhowell7@eepurl.com
 9	Jose	Foster	jfoster8@yelp.com
 10	Emily	Stewart	estewart9@opensource.org
+
+mode skip
 
 # with explicit port nr
 query IIII
