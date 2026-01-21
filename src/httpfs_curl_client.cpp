@@ -413,7 +413,7 @@ private:
 			// TODO: request error can come from HTTPS Status code toString() value.
 			if (!request_info->header_collection.empty() &&
 			    request_info->header_collection.back().HasHeader("__RESPONSE_STATUS__")) {
-				response->request_error = request_info->header_collection.back().GetHeaderValue("__RESPONSE_STATUS__");
+				response->request_error = request_info->response_code;
 			} else {
 				response->request_error = curl_easy_strerror(res);
 			}
