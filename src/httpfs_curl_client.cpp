@@ -422,7 +422,6 @@ private:
 		response->body = request_info->body;
 		response->url = request_info->url;
 		response->reason = HTTPUtil::GetStatusMessage(HTTPUtil::ToStatusCode(request_info->response_code));
-		response->request_error = curl_easy_strerror(res);
 		// if (!request_info->header_collection.empty()) {
 			for (auto &header : request_info->header_collection.back()) {
 				response->headers.Insert(header.first, header.second);
