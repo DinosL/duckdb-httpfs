@@ -427,7 +427,6 @@ private:
 				response->headers.Insert(header.first, header.second);
 			}
 		}
-		// ResetRequestInfo();
 		return response;
 	}
 
@@ -466,31 +465,6 @@ private:
 unique_ptr<HTTPClient> HTTPFSCurlUtil::InitializeClient(HTTPParams &http_params, const string &proto_host_port) {
 	auto client = make_uniq<HTTPFSCurlClient>(http_params.Cast<HTTPFSParams>(), proto_host_port);
 	return std::move(client);
-}
-
-unordered_map<string, string> HTTPFSCurlUtil::ParseGetParameters(const string &text) {
-	unordered_map<std::string, std::string> params;
-
-	auto pos = text.find('?');
-	if (pos == std::string::npos)
-		return params;
-
-	std::string query = text.substr(pos + 1);
-	std::stringstream ss(query);
-	std::string item;
-
-	while (std::getline(ss, item, '&')) {
-		auto eq_pos = item.find('=');
-		if (eq_pos != std::string::npos) {
-			std::string key = item.substr(0, eq_pos);
-			std::string value = StringUtil::URLDecode(item.substr(eq_pos + 1));
-			params[key] = value;
-		} else {
-			params[item] = ""; // key with no value
-		}
-	}
-
-	return params;
 }
 
 string HTTPFSCurlUtil::GetName() const {
