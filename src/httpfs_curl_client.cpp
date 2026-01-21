@@ -60,6 +60,7 @@ static size_t RequestHeaderCallback(void *contents, size_t size, size_t nmemb, v
 			header.pop_back();
 		}
 	}
+	header_collection->header_collection.push_back(HTTPHeaders());
 
 	size_t colonPos = header.find(':');
 
