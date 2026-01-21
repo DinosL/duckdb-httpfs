@@ -409,24 +409,25 @@ private:
 	unique_ptr<HTTPResponse> TransformResponseCurl(CURLcode res) {
 		auto status_code = HTTPStatusCode(request_info->response_code);
 		auto response = make_uniq<HTTPResponse>(status_code);
-		if (res != CURLcode::CURLE_OK) {
-			// TODO: request error can come from HTTPS Status code toString() value.
-			if (!request_info->header_collection.empty() &&
-			    request_info->header_collection.back().HasHeader("__RESPONSE_STATUS__")) {
-				response->request_error = request_info->response_code;
-			} else {
-				response->request_error = curl_easy_strerror(res);
-			}
-			return response;
-		}
+		// if (res != CURLcode::CURLE_OK) {
+		// 	// TODO: request error can come from HTTPS Status code toString() value.
+		// 	if (!request_info->header_collection.empty() &&
+		// 	    request_info->header_collection.back().HasHeader("__RESPONSE_STATUS__")) {
+		// 		response->request_error = request_info->response_code;
+		// 	} else {
+		// 		response->request_error = curl_easy_strerror(res);
+		// 	}
+		// 	return response;
+		// }
 		response->body = request_info->body;
 		response->url = request_info->url;
 		response->reason = HTTPUtil::GetStatusMessage(HTTPUtil::ToStatusCode(request_info->response_code));
-		if (!request_info->header_collection.empty()) {
+		response->request_error = curl_easy_strerror(res);
+		// if (!request_info->header_collection.empty()) {
 			for (auto &header : request_info->header_collection.back()) {
 				response->headers.Insert(header.first, header.second);
 			}
-		}
+		// }
 		// ResetRequestInfo();
 		return response;
 	}
