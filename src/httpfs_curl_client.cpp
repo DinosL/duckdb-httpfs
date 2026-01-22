@@ -60,7 +60,14 @@ static size_t RequestHeaderCallback(void *contents, size_t size, size_t nmemb, v
 			header.pop_back();
 		}
 	}
-	header_collection->header_collection.push_back(HTTPHeaders());
+	// header_collection->header_collection.push_back(HTTPHeaders());
+
+	// If header starts with HTTP/... curl has followed a redirect and we have a new Header,
+	// so we push back a new header_collection and store headers from the redirect there.
+	if (header.rfind("HTTP/", 0) == 0) {
+		header_collection->header_collection.push_back(HTTPHeaders());
+		// header_collection->header_collection.back().Insert("__RESPONSE_STATUS__", header);
+	}
 
 	size_t colonPos = header.find(':');
 
