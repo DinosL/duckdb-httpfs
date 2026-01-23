@@ -1,0 +1,25 @@
+# name: test/sql/httpfs/test.test
+# description: 
+# group: [httpfs]
+
+# AWS_ACCESS_KEY_ID='sdfasdf'
+
+require httpfs
+
+require parquet
+
+statement ok
+SET httpfs_client_implementation = httplib
+
+# statement ok
+# FROM 's3://coiled-datasets/timeseries/20-years/parquet/1*.parquet'
+
+# statement ok
+# SET s3_region='us-west-2';
+
+# statement ok
+# SET s3_url_style='path';
+#
+statement ok
+SELECT * FROM read_parquet('s3://overturemaps-us-west-2/release/2026-01-21.0/theme=places/type=place/*.parquet') LIMIT 10;
+

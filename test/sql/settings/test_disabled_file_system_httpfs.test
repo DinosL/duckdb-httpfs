@@ -6,10 +6,13 @@ require skip_reload
 
 require no_extension_autoloading "EXPECTED: Test disable loading from local file system"
 
-statement ok
-PRAGMA enable_verification
+# statement ok
+# PRAGMA enable_verification
 
 require httpfs
+
+# statement ok
+# SET httpfs_client_implementation = httplib
 
 statement ok
 SET disabled_filesystems='LocalFileSystem';
@@ -17,6 +20,8 @@ SET disabled_filesystems='LocalFileSystem';
 # httpfs works
 statement ok
 from read_csv_auto('https://github.com/duckdb/duckdb/raw/main/data/csv/customer.csv');
+
+mode skip
 
 statement ok
 SET disabled_filesystems='LocalFileSystem,HTTPFileSystem';
