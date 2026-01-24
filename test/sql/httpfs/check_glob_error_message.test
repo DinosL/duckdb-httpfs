@@ -1,0 +1,17 @@
+# name: test/sql/httpfs/check_glob_error_message.test
+# description: 
+# group: [httpfs]
+
+# AWS_ACCESS_KEY_ID='sdfasdf'
+
+require httpfs
+
+require parquet
+
+# statement ok
+# SET httpfs_client_implementation = httplib
+
+statement error
+FROM 's3://coiled-datasets/timeseries/20-years/parquet/1*.parquet'
+----
+IO Error: No files found that match the pattern "s3://coiled-datasets/timeseries/20-years/parquet/1*.parquet"

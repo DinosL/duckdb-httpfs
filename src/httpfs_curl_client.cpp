@@ -116,8 +116,11 @@ static idx_t httpfs_client_count = 0;
 
 class HTTPFSCurlClient : public HTTPClient {
 public:
+	CURLU *base_url = nullptr;
 	HTTPFSCurlClient(HTTPFSParams &http_params, const string &proto_host_port) {
 		proto_host = proto_host_port;
+		base_url = curl_url();
+		curl_url_set(base_url, CURLUPART_URL, proto_host_port.c_str(), 0);
 		Initialize(http_params);
 	}
 	void Initialize(HTTPParams &http_p) override {
@@ -139,7 +142,7 @@ public:
 		curl_easy_setopt(*curl, CURLOPT_FOLLOWLOCATION, 1L);
 
 		// if (!proto_host.empty()) {
-		curl_easy_setopt(*curl, CURLOPT_URL, proto_host.c_str());
+		// curl_easy_setopt(*curl, CURLOPT_URL, proto_host.c_str());
 		// }
 
 		// Curl re-uses connections by default
@@ -207,12 +210,30 @@ public:
 
 		CURLcode res;
 		{
-			// If the same handle served a HEAD request, we must set NOBODY back to 0L to request content again
 			curl_easy_setopt(*curl, CURLOPT_NOBODY, 0L);
-			auto encoded_url = EncodeSpaces(request_info->url);
-			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+
+			// CURLU *url = curl_url_dup(base_url);
+
+			// curl_url_set(url, CURLUPART_PATH, info.url.c_str(), 0);
+
+			// curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			// curl_easy_setopt(*curl, CURLOPT_CURLU, url);
+			// auto encoded_url = EncodeSpaces(request_info->url);
+			// curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+
+			CURLU *url = curl_url_dup(base_url);
+			// curl_url_set(url, CURLUPART_PATH, info.path.c_str(), 0);  // Use info.path instead of info.url
+			//
+			// curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			// curl_easy_setopt(*curl, CURLOPT_CURLU, url);
+			curl_url_set(url, CURLUPART_URL, info.path.c_str(), 0);
+
+			curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			curl_easy_setopt(*curl, CURLOPT_CURLU, url);
 			curl_easy_setopt(*curl, CURLOPT_HTTPHEADER, curl_headers ? curl_headers.headers : nullptr);
+
 			res = curl->Execute();
+			curl_url_cleanup(url);
 		}
 
 		curl_easy_getinfo(*curl, CURLINFO_RESPONSE_CODE, &request_info->response_code);
@@ -259,8 +280,13 @@ public:
 
 		CURLcode res;
 		{
-			auto encoded_url = EncodeSpaces(request_info->url);
-			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+			// auto encoded_url = EncodeSpaces(request_info->url);
+			// curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+			CURLU *url = curl_url_dup(base_url);
+			curl_url_set(url, CURLUPART_URL, info.path.c_str(), 0);
+
+			curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			curl_easy_setopt(*curl, CURLOPT_CURLU, url);
 			// Perform PUT
 			curl_easy_setopt(*curl, CURLOPT_CUSTOMREQUEST, "PUT");
 			// Include PUT body
@@ -290,19 +316,41 @@ public:
 
 		CURLcode res;
 		{
+			// CURLU *url = curl_url_dup(base_url);
+
+			// info.url = "/?encoding-type=..."
+			// curl_url_set(url, CURLUPART_PATH, info.url.c_str(), CURLU_URLENCODE);
+
+			// char *full = nullptr;
+			// curl_url_get(url, CURLUPART_URL, &full, 0);
+			// Printer::PrintF("CURLU URL BEFORE EXEC = %s", full);
+			// curl_free(full);
+			//
+			// curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			// curl_easy_setopt(*curl, CURLOPT_CURLU, url);
+			// curl_easy_setopt(*curl, CURLOPT_HTTPHEADER,
+			// 				 curl_headers ? curl_headers.headers : nullptr);
+
 			// Set URL
-			auto encoded_url = EncodeSpaces(request_info->url);
-			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+			// auto encoded_url = EncodeSpaces(request_info->url);
+			// curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
 
 			// Perform HEAD request instead of GET
 			curl_easy_setopt(*curl, CURLOPT_NOBODY, 1L);
 			curl_easy_setopt(*curl, CURLOPT_HTTPGET, 0L);
+
+			CURLU *url = curl_url_dup(base_url);
+			curl_url_set(url, CURLUPART_URL, info.path.c_str(), 0);
+
+			curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			curl_easy_setopt(*curl, CURLOPT_CURLU, url);
 
 			// Add headers if any
 			curl_easy_setopt(*curl, CURLOPT_HTTPHEADER, curl_headers ? curl_headers.headers : nullptr);
 
 			// Execute HEAD request
 			res = curl->Execute();
+			curl_url_cleanup(url);
 		}
 
 		curl_easy_getinfo(*curl, CURLINFO_RESPONSE_CODE, &request_info->response_code);
@@ -322,8 +370,14 @@ public:
 		CURLcode res;
 		{
 			// Set URL
-			auto encoded_url = EncodeSpaces(request_info->url);
-			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+			// auto encoded_url = EncodeSpaces(request_info->url);
+			// curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+
+			CURLU *url = curl_url_dup(base_url);
+			curl_url_set(url, CURLUPART_URL, info.path.c_str(), 0);
+
+			curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			curl_easy_setopt(*curl, CURLOPT_CURLU, url);
 
 			// Set DELETE request method
 			curl_easy_setopt(*curl, CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -358,8 +412,13 @@ public:
 
 		CURLcode res;
 		{
-			auto encoded_url = EncodeSpaces(request_info->url);
-			curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+			// auto encoded_url = EncodeSpaces(request_info->url);
+			// curl_easy_setopt(*curl, CURLOPT_URL, encoded_url.c_str());
+			CURLU *url = curl_url_dup(base_url);
+			curl_url_set(url, CURLUPART_URL, info.path.c_str(), 0);
+
+			curl_easy_setopt(*curl, CURLOPT_URL, nullptr);
+			curl_easy_setopt(*curl, CURLOPT_CURLU, url);
 			if (info.send_post_as_get_request) {
 				curl_easy_setopt(*curl, CURLOPT_CUSTOMREQUEST, "GET");
 			} else {
