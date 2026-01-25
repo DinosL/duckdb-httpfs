@@ -1306,7 +1306,7 @@ string AWSListObjectV2::Request(const string &path, HTTPParams &http_params, con
 		    if (static_cast<int>(response.status) >= 400) {
 			    string trimmed_path = path;
 			    StringUtil::RTrim(trimmed_path, "/");
-			    trimmed_path += listobjectv2_url;
+		    	trimmed_path += (req_path + "?" + req_params);
 			    throw S3FileSystem::GetS3Error(s3_auth_params, response, trimmed_path);
 		    }
 		    return true;
