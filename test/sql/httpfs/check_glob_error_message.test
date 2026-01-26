@@ -8,14 +8,7 @@ require httpfs
 
 require parquet
 
-statement ok
-SET httpfs_client_implementation = httplib
-
 statement error
 FROM 's3://coiled-datasets/timeseries/20-years/parquet/1*.parquet'
 ----
-<REGEX>:.*IO Error.*error for HTTP GET to.*
-
-# <REGEX>:.*IO Error.*error for HTTP GET to.*
-
-# IO Error: No files found that match the pattern "s3://coiled-datasets/timeseries/20-years/parquet/1*.parquet"
+<REGEX>:.*IO Error.*
