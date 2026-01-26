@@ -179,6 +179,7 @@ public:
 	}
 
 	~HTTPFSCurlClient() {
+		curl_url_cleanup(base_url);
 		DestroyCurlGlobal();
 	}
 

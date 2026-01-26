@@ -2,8 +2,6 @@
 # description: 
 # group: [httpfs]
 
-# AWS_ACCESS_KEY_ID='sdfasdf'
-
 require httpfs
 
 require parquet
