@@ -3,8 +3,6 @@
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 
-#include "duckdb/common/string_util.hpp"
-
 #include <curl/curl.h>
 #include <sys/stat.h>
 #include "duckdb/common/exception/http_exception.hpp"
@@ -116,9 +114,7 @@ static idx_t httpfs_client_count = 0;
 
 class HTTPFSCurlClient : public HTTPClient {
 public:
-	CURLU *base_url = nullptr;
 	HTTPFSCurlClient(HTTPFSParams &http_params, const string &proto_host_port) {
-		proto_host = proto_host_port;
 		base_url = curl_url();
 		curl_url_set(base_url, CURLUPART_URL, proto_host_port.c_str(), 0);
 		Initialize(http_params);
@@ -454,7 +450,7 @@ private:
 	unique_ptr<CURLHandle> curl;
 	optional_ptr<HTTPState> state;
 	unique_ptr<RequestInfo> request_info;
-	string proto_host;
+	CURLU *base_url = nullptr;
 
 	static std::mutex &GetRefLock() {
 		static std::mutex mtx;
