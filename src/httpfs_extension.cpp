@@ -72,9 +72,11 @@ static void LoadInternal(ExtensionLoader &loader) {
 	                          LogicalType::BOOLEAN, Value(false));
 	config.AddExtensionOption("enable_server_cert_verification", "Enable server side certificate verification.",
 	                          LogicalType::BOOLEAN, Value(true));
-	// the enable_curl_server_cert_verification setting is deprecated. It is unified with enable_server_cert_verification
+	// the enable_curl_server_cert_verification setting is deprecated. It is unified with
+	// enable_server_cert_verification
 	auto callback_enable_curl_server_cert_verification = [](ClientContext &context, SetScope scope, Value &parameter) {
-		DUCKDB_LOG_WARNING(context, "the enable_curl_server_cert_verification setting is deprecated. Use enable_server_cert_verification instead");
+		DUCKDB_LOG_WARNING(context, "the enable_curl_server_cert_verification setting is deprecated. Use "
+		                            "enable_server_cert_verification instead");
 		DBConfig::GetConfig(context).SetOption("enable_server_cert_verification", parameter);
 	};
 	config.AddExtensionOption("enable_curl_server_cert_verification",
