@@ -879,7 +879,7 @@ static void RunCompletePost200ErrorRetryScenario(const string &client_implementa
 
 	auto observations = server.Observations();
 	INFO(MockS3DescribeObservations(observations));
-	// The two 200-with-embedded-error completions were retried, and the third completion succeeded: 3 complete
+	// The two 200 with embedded error completions were retried, and the third completion succeeded: 3 complete
 	// POSTs in total, all reported as HTTP 200 by S3.
 	REQUIRE(CountObservationsTarget(observations, "POST", 200, "uploadId") == 3);
 }
