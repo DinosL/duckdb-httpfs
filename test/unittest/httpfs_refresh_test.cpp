@@ -884,7 +884,8 @@ static void RunCompletePost200ErrorRetryScenario(const string &client_implementa
 	REQUIRE(CountObservationsTarget(observations, "POST", 200, "uploadId") == 3);
 }
 
-// A CompleteMultipartUpload that keeps returning a 200 OK with an embedded error must exhaust exactly http_retries retries
+// A CompleteMultipartUpload that keeps returning a 200 OK with an embedded error must exhaust exactly http_retries
+// retries
 static void RunCompletePost200ErrorExhaustsBudgetScenario(const string &client_implementation) {
 	MockS3ServerConfig config;
 	config.bucket = BUCKET;
